@@ -48,9 +48,9 @@ Play it on [itch.io](https://oliverrr100.itch.io/shape-survivor) or read the cod
 
 <br>
 
-<p><a href="https://oliverrr100.itch.io/tps-lone-hero"><img src="assets/card-lone-hero.webp" alt="Lone Hero, a 3D stealth and action shooter made with Unity 6 and C#. Looping gameplay footage." width="100%"></a></p>
+<p><a href="https://oliverrr100.itch.io/tps-lone-hero"><img src="assets/card-lone-hero.webp" alt="Lone Hero, a 3D stealth and action shooter made with Unity 2022.3 and C#. Looping gameplay footage." width="100%"></a></p>
 
-A fast-paced third-person stealth and action-shooter prototype built in Unity 6. Stranded in an isolated alien arena and vastly outnumbered, you balance tense line-of-sight stealth with high-stakes projectile combat to secure key items and find the exit.
+A fast-paced third-person stealth and action-shooter prototype built in Unity 2022.3. Stranded in an isolated alien arena and vastly outnumbered, you balance tense line-of-sight stealth with high-stakes projectile combat to secure key items and find the exit.
 
 Play it on [itch.io](https://oliverrr100.itch.io/tps-lone-hero) or read the code on [GitHub](https://github.com/Oliverr100/3D-TPS_LoneHero).
 
