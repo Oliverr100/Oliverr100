@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="Oliver Tong, game programmer. 2D gameplay loops, core mechanics and interactive systems. Now expanding into 3D." width="100%">
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/hero-m.svg">
+    <img src="assets/hero.svg" alt="Oliver Tong, game programmer. 2D gameplay loops, core mechanics and interactive systems. Now expanding into 3D." width="100%">
+  </picture>
 </p>
 
 <p align="center">
@@ -10,10 +13,18 @@
 
 <br>
 
-<h3><img src="assets/title-about.svg" alt="About" width="100%"></h3>
+<h3>
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/title-about-m.svg">
+    <img src="assets/title-about.svg" alt="About" width="100%">
+  </picture>
+</h3>
 
 <p align="center">
-  <img src="assets/player-card.svg" alt="Player card for Oliver Tong. Role: game programmer. University: Bina Nusantara University. Program: Game Application and Technology. Specialty: 2D gameplay loops and core mechanics. Learning: 3D game design." width="100%">
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/player-card-m.svg">
+    <img src="assets/player-card.svg" alt="Player card for Oliver Tong. Role: game programmer. University: Bina Nusantara University. Program: Game Application and Technology. Specialty: 2D gameplay loops and core mechanics. Learning: 3D game design." width="100%">
+  </picture>
 </p>
 
 Hi, I'm Oliver! I'm a **Game Application & Technology** student at **Bina Nusantara University**, passionate about game design and player experience.
@@ -22,7 +33,12 @@ With hands-on experience in **Unity**, I specialize in designing engaging **2D g
 
 <br>
 
-<h3><img src="assets/title-projects.svg" alt="Projects" width="100%"></h3>
+<h3>
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/title-projects-m.svg">
+    <img src="assets/title-projects.svg" alt="Projects" width="100%">
+  </picture>
+</h3>
 
 <p><a href="https://oliverrr100.itch.io/shape-survivor"><img src="assets/card-shape-survivor.webp" alt="Shape Survivor, a 2D survival game made with Unity and C#. Looping gameplay footage: a mint square auto-fires at waves of red squares." width="100%"></a></p>
 
@@ -56,16 +72,27 @@ A 3D physics-based multiplayer escape game built natively in Roblox Studio with 
 
 <br>
 
-<h3><img src="assets/title-loadout.svg" alt="Loadout" width="100%"></h3>
+<h3>
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/title-loadout-m.svg">
+    <img src="assets/title-loadout.svg" alt="Loadout" width="100%">
+  </picture>
+</h3>
 
 <p align="center">
-  <img src="assets/loadout.svg" alt="Engines: Unity and Roblox Studio. Languages: C#, C++ and Luau. Tools: Git, GitHub and itch.io." width="100%">
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/loadout-m.svg">
+    <img src="assets/loadout.svg" alt="Engines: Unity and Roblox Studio. Languages: C#, C++ and Luau. Tools: Git, GitHub and itch.io." width="100%">
+  </picture>
 </p>
 
 <br>
 
 <p align="center">
-  <img src="assets/closing.svg" alt="Let's make something playable. Always happy to talk about games, collaborations and opportunities." width="100%">
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/closing-m.svg">
+    <img src="assets/closing.svg" alt="Let's make something playable. Always happy to talk about games, collaborations and opportunities." width="100%">
+  </picture>
 </p>
 
 <p align="center">
