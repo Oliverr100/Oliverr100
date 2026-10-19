@@ -1,50 +1,37 @@
 #!/usr/bin/env python3
-"""Draws the HIGH SCORES panel (assets/stats.svg and assets/stats-m.svg) from
-public GitHub activity. Standard library only, so the workflow needs no installs.
+"""Draws the Activity panel (assets/stats.svg and assets/stats-m.svg) from public
+GitHub activity. Standard library only, so the workflow needs no installs.
 
 Usage:
   GITHUB_TOKEN=... python3 .github/stats/stats.py            # fetch + draw
   python3 .github/stats/stats.py --data sample.json          # draw from saved data
 
-Pixel lettering comes from glyphs.json, rasterised from Jersey 10 and Tiny5
-(both SIL Open Font License 1.1).
+Lettering comes from glyphs.json: outlines of Unbounded and Familjen Grotesk
+(both SIL Open Font License 1.1), so the SVG needs no web fonts.
 """
-import base64
 import datetime as dt
 import json
 import os
-import struct
 import sys
 import urllib.request
-import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 LOGIN = os.environ.get("STATS_LOGIN", "Oliverr100")
-K = 4
 
-INK = "#22091F"
-CREAM = "#F6EEE3"
-LILAC = "#A99CC8"
-LILAC_L = "#D9D0EE"
-DIM = "#6F5FA6"
-GOLD_BANDS = [(0, "#FFF1B8"), (3, "#FFE08A"), (6, "#FFC94D"), (9, "#FF9A3D")]
-LEVELS = ["#1E1447", "#7A4A1E", "#B8742A", "#F0A63A", "#FFE08A"]
-LEVEL_NAMES = {"NONE": 0, "FIRST_QUARTILE": 1, "SECOND_QUARTILE": 2, "THIRD_QUARTILE": 3, "FOURTH_QUARTILE": 4}
-BAYER4 = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
-MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+TXT, WHITE, SUB, MUTED = "#EEF1F6", "#FFFFFF", "#9AA3B2", "#6B7384"
+MINT, MINT_D, FIELD = "#6EE6CE", "#3FC2A7", "#0F1014"
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-GLYPHS = json.load(open(os.path.join(HERE, "glyphs.json")))
+GL = json.load(open(os.path.join(HERE, "glyphs.json"), encoding="utf-8"))
 
-
-# ------------------------------------------------------------------ data
 QUERY = """
 query($login: String!) {
   user(login: $login) {
     contributionsCollection {
       contributionCalendar {
         totalContributions
-        weeks { contributionDays { date contributionCount contributionLevel } }
+        weeks { contributionDays { date contributionCount } }
       }
     }
     repositories(ownerAffiliations: OWNER, privacy: PUBLIC) { totalCount }
@@ -66,11 +53,8 @@ def fetch():
         sys.exit("GraphQL error: " + json.dumps(res["errors"]))
     u = res["data"]["user"]
     cal = u["contributionsCollection"]["contributionCalendar"]
-    days = []
-    for w in cal["weeks"]:
-        for d in w["contributionDays"]:
-            days.append({"date": d["date"], "count": d["contributionCount"],
-                         "level": LEVEL_NAMES.get(d["contributionLevel"], 0)})
+    days = [{"date": d["date"], "count": d["contributionCount"]}
+            for w in cal["weeks"] for d in w["contributionDays"]]
     return {"total": cal["totalContributions"], "days": days, "repos": u["repositories"]["totalCount"]}
 
 
@@ -81,267 +65,191 @@ def summarise(data):
     for c in counts:
         run = run + 1 if c > 0 else 0
         longest = max(longest, run)
-    cur = 0
-    i = len(counts) - 1
-    if i >= 0 and counts[i] == 0:  # today may not have activity yet
-        i -= 1
-    while i >= 0 and counts[i] > 0:
-        cur += 1
-        i -= 1
-    return {
-        "total": data["total"],
-        "current": cur,
-        "longest": longest,
-        "best": max(counts) if counts else 0,
-        "active": sum(1 for c in counts if c > 0),
-        "repos": data["repos"],
-        "days": days,
-    }
+    weeks = []  # (first date, total), Sunday-start like the GitHub calendar
+    for d in days:
+        date = dt.date.fromisoformat(d["date"])
+        if not weeks or (date.weekday() + 1) % 7 == 0:
+            weeks.append([date, 0])
+        weeks[-1][1] += d["count"]
+    return {"total": data["total"], "longest": longest, "best": max(counts) if counts else 0,
+            "active": sum(1 for c in counts if c > 0), "repos": data["repos"], "weeks": weeks,
+            "today": dt.date.fromisoformat(days[-1]["date"]) if days else dt.date.today()}
 
 
-# ---------------------------------------------------------------- canvas
-def rgb(c):
-    c = c.lstrip("#")
-    return int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16)
+# ------------------------------------------------------------------ svg
+class Doc:
+    def __init__(self):
+        self.used = {}
 
+    def text(self, font, s, size, x, y, fill=TXT, anchor="start", tracking=0.0):
+        F = GL[font]
+        upem = F["upem"]
+        sc = size / upem
+        pen = 0
+        xs = []
+        for i, ch in enumerate(s):
+            g = F["glyphs"].get(ch) or F["glyphs"]["?"]
+            xs.append(pen)
+            pen += g[0] + tracking * upem
+            if i + 1 < len(s):
+                pen += F["kern"].get(ch + s[i + 1], 0)
+        w = (pen - tracking * upem) * sc
+        if anchor == "end":
+            x -= w
+        elif anchor == "middle":
+            x -= w / 2
+        uses = []
+        for ch, px in zip(s, xs):
+            if ch == " " or ch not in F["glyphs"]:
+                continue
+            gid = f"{font[0]}{'b' if font == 'ui_b' else ''}{ord(ch)}"
+            self.used[gid] = F["glyphs"][ch][1]
+            uses.append(f'<use href="#{gid}" x="{round(px)}"/>')
+        return (f'<g transform="translate({x:.1f} {y:.1f}) scale({sc:.5f} {-sc:.5f})" fill="{fill}">'
+                f'{"".join(uses)}</g>'), w
 
-class Canvas:
-    def __init__(self, w, h):
-        self.w, self.h = w, h
-        self.buf = bytearray(w * h * 4)
-
-    def px(self, x, y, c, a=255):
-        if not (0 <= x < self.w and 0 <= y < self.h):
-            return
-        r, g, b = rgb(c) if isinstance(c, str) else c
-        i = (y * self.w + x) * 4
-        if a >= 255:
-            self.buf[i:i + 4] = bytes((r, g, b, 255))
-            return
-        sa = a / 255
-        da = self.buf[i + 3] / 255
-        oa = sa + da * (1 - sa)
-        if oa <= 0:
-            return
-        for k, v in enumerate((r, g, b)):
-            self.buf[i + k] = int(round((v * sa + self.buf[i + k] * da * (1 - sa)) / oa))
-        self.buf[i + 3] = int(round(oa * 255))
-
-    def rect(self, x, y, w, h, c, a=255):
-        for yy in range(y, y + h):
-            for xx in range(x, x + w):
-                self.px(xx, yy, c, a)
-
-    def rrect(self, x, y, w, h, c, corner):
-        for yy in range(h):
-            inset = 0
-            if yy < len(corner):
-                inset = corner[yy]
-            elif yy >= h - len(corner):
-                inset = corner[h - 1 - yy]
-            for xx in range(x + inset, x + w - inset):
-                self.px(xx, y + yy, c)
-
-    def png(self, k):
-        rows = []
-        for y in range(self.h):
-            row = self.buf[y * self.w * 4:(y + 1) * self.w * 4]
-            wide = bytearray()
-            for x in range(self.w):
-                wide += bytes(row[x * 4:x * 4 + 4]) * k
-            line = b"\x00" + bytes(wide)
-            rows.append(line * k)
-        raw = b"".join(rows)
-
-        def chunk(t, d):
-            return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
-        ihdr = struct.pack(">IIBBBBB", self.w * k, self.h * k, 8, 6, 0, 0, 0)
-        return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
-
-
-def window(cv):
-    w, h = cv.w, cv.h
-    cv.rrect(0, 0, w, h, INK, [3, 1, 1])
-    cv.rrect(1, 1, w - 2, h - 2, "#CFC4EA", [2, 1])
-    for yy in range(2, h - 2):
-        cv.px(w - 2, yy, "#4A3C7A")
-    for xx in range(2, w - 2):
-        cv.px(xx, h - 2, "#4A3C7A")
-    cv.rrect(2, 2, w - 4, h - 4, "#6F5FA6", [1])
-    cv.rrect(3, 3, w - 6, h - 6, INK, [1])
-    top, bot = rgb("#1A0F3D"), rgb("#0E0826")
-    steps = 6
-    cols = [tuple(int(round(top[i] + (bot[i] - top[i]) * s / (steps - 1))) for i in range(3)) for s in range(steps)]
-    ih = h - 8
-    for yy in range(ih):
-        t = yy / max(1, ih - 1) * (steps - 1)
-        lo = int(t)
-        fr = t - lo
-        for xx in range(w - 8):
-            thr = (BAYER4[(4 + yy) % 4][(4 + xx) % 4] + 0.5) / 16
-            cv.px(4 + xx, 4 + yy, cols[min(steps - 1, lo + (1 if fr > thr else 0))])
-
-
-def text_width(font, s, scale=1, tracking=0):
-    g = GLYPHS[font]["glyphs"]
-    return sum((g.get(ch, g["?"])["a"] + tracking) * scale for ch in s) - tracking * scale
-
-
-def text(cv, font, s, x, y, col=CREAM, scale=1, bands=None, shadow=None, tracking=0):
-    """Draw text with its cap top at y. Optional 1px ink outline+shadow via shadow=(dx, dy)."""
-    f = GLYPHS[font]
-    cap = f["cap"]
-    base = y + cap * scale
-    cells = []
-    pen = x
-    for ch in s:
-        gl = f["glyphs"].get(ch, f["glyphs"]["?"])
-        for j, row in enumerate(gl["r"]):
-            for i, bit in enumerate(row):
-                if bit == "1":
-                    for sy in range(scale):
-                        for sx in range(scale):
-                            cells.append((pen + (gl["x"] + i) * scale + sx, base + (gl["y"] + j) * scale + sy,
-                                          (gl["y"] + j + cap) * scale + sy))
-        pen += (gl["a"] + tracking) * scale
-    if shadow:
-        on = {(cx, cy) for cx, cy, _ in cells}
-        ring = set()
-        for (cx, cy) in on:
-            for dx in (-1, 0, 1):
-                for dy in (-1, 0, 1):
-                    ring.add((cx + dx, cy + dy))
-        ring -= on
-        for (cx, cy) in on | ring:
-            cv.px(cx + shadow[0], cy + shadow[1], "#5A1F4F")
-        for (cx, cy) in ring:
-            cv.px(cx, cy, INK)
-    for (cx, cy, ry) in cells:
-        c = col
-        if bands:
-            for r0, bc in bands:
-                if ry >= r0 * scale:
-                    c = bc
-        cv.px(cx, cy, c)
-    return pen - x
+    def defs(self):
+        return "".join(f'<path id="{k}" d="{v}"/>' for k, v in self.used.items())
 
 
 def fmt(n):
     return f"{n:,}"
 
 
-# ------------------------------------------------------------------- draw
-def draw(st, phone, today):
-    W = 180 if phone else 320
-    weeks_shown = 30 if phone else 53
-    days = st["days"]
-    # group into weeks (Sunday-start, as GitHub does)
-    weeks = []
-    for d in days:
-        date = dt.date.fromisoformat(d["date"])
-        dow = (date.weekday() + 1) % 7
-        if not weeks or dow == 0:
-            weeks.append([None] * 7)
-        weeks[-1][dow] = (date, d["count"], d["level"])
-    weeks = weeks[-weeks_shown:]
-    pitch, cell = 5, 4
-    gw = len(weeks) * pitch - 1
+def plural(n, word):
+    return f"{fmt(n)} {word}" + ("" if n == 1 else "s")
+
+
+def draw(st, phone):
+    doc = Doc()
+    W = 720 if phone else 1200
+    weeks = st["weeks"][-26:] if phone else st["weeks"][-53:]
+    vals = [w[1] for w in weeks]
+    vmax = max(vals) if vals and max(vals) > 0 else 1
+    best_i = vals.index(max(vals)) if vals else 0
+    el = []
+    # headline
     if phone:
-        stat_y = 47
-        grid_y = 106
+        big, _ = doc.text("display", fmt(st["total"]), 64, 36, 104, fill=MINT, tracking=-0.01)
+        lab, _ = doc.text("ui", "contributions in the last year", 22, 36, 142, fill=SUB, tracking=-0.01)
+        el += [big, lab]
+        stats_y, cell_w, x0 = 196, 216, 36
+        chart = (30, 270, W - 60, 220)
     else:
-        stat_y = 10
-        grid_y = 62
-    H = grid_y + 7 * pitch + 30
-    cv = Canvas(W, H)
-    window(cv)
-    # headline number
-    text(cv, "tiny", "CONTRIBUTIONS IN THE LAST YEAR", 14, 11, LILAC)
-    text(cv, "jersey", fmt(st["total"]), 14, 20, scale=2, bands=GOLD_BANDS, shadow=(1, 1))
-    # stat cells
-    cells = [("CURRENT STREAK", f"{st['current']} day" + ("" if st["current"] == 1 else "s")),
-             ("LONGEST STREAK", f"{st['longest']} day" + ("" if st["longest"] == 1 else "s")),
-             ("BEST DAY", fmt(st["best"])),
-             ("PUBLIC REPOS", fmt(st["repos"]))]
+        big, bw = doc.text("display", fmt(st["total"]), 76, 46, 120, fill=MINT, tracking=-0.01)
+        lab, _ = doc.text("ui", "contributions in the last year", 24, 48, 158, fill=SUB, tracking=-0.01)
+        el += [big, lab]
+        stats_y, cell_w, x0 = 100, 190, W - 48 - 3 * 190
+        chart = (40, 196, W - 80, 200)
+    stats = [(plural(st["longest"], "day"), "Longest streak"),
+             (fmt(st["best"]), "Best day"),
+             (fmt(st["repos"]), "Public repos")]
+    vs = 34 if phone else 40
+    ls = 18 if phone else 20
+    widths = [max(doc.text("display", v, vs, 0, 0, tracking=-0.01)[1], doc.text("ui", l, ls, 0, 0, tracking=-0.01)[1])
+              for v, l in stats]
     if phone:
-        x0, colw = 14, 80
+        xs = [x0 + i * cell_w for i in range(3)]
     else:
-        x0, colw = 150, 82
-    for i, (lab, val) in enumerate(cells):
-        cx = x0 + (i % 2) * colw
-        cy = stat_y + (i // 2) * 22
-        cv.rect(cx - 4, cy - 2, 2, 18, "#3A2C66")
-        text(cv, "tiny", lab, cx, cy + 1, LILAC)
-        text(cv, "jersey", val, cx, cy + 8, CREAM)
-    # contribution grid: each day is a block, brighter = more contributions
-    gx = (W - gw) // 2
-    for wi, wk in enumerate(weeks):
-        for di, d in enumerate(wk):
-            if d is None:
+        gap = 64
+        xs = []
+        x = W - 48
+        for w_ in reversed(widths):
+            x -= w_
+            xs.insert(0, x)
+            x -= gap
+    for i, (v, l) in enumerate(stats):
+        cx = xs[i]
+        if not phone or i:
+            el.append(f'<rect x="{cx - (30 if not phone else 14):.1f}" y="{stats_y - (40 if not phone else 34)}" width="1.5" '
+                      f'height="{70 if not phone else 60}" fill="#fff" fill-opacity=".1"/>')
+        vt, _ = doc.text("display", v, vs, cx, stats_y, fill=WHITE, tracking=-0.01)
+        lt, _ = doc.text("ui", l, ls, cx, stats_y + (28 if phone else 32), fill=MUTED, tracking=-0.01)
+        el += [vt, lt]
+    # chart frame
+    cx0, cy0, cw, ch = chart
+    el.append(f'<rect x="{cx0}" y="{cy0}" width="{cw}" height="{ch}" rx="18" fill="{FIELD}" '
+              f'stroke="#fff" stroke-width="1.5" stroke-opacity=".1"/>')
+    padx, top, bottom = 24, 44, 46
+    base = cy0 + ch - bottom
+    hmax = ch - top - bottom
+    for k in (1, 2, 3):
+        gy = base - hmax * k / 3
+        el.append(f'<path d="M{cx0 + padx} {gy:.1f} H{cx0 + cw - padx}" stroke="#fff" stroke-opacity=".06" '
+                  f'stroke-width="1.5" stroke-dasharray="4 6"/>')
+    el.append(f'<path d="M{cx0 + padx} {base} H{cx0 + cw - padx}" stroke="#fff" stroke-opacity=".12" stroke-width="1.5"/>')
+    n = len(weeks)
+    pitch = (cw - 2 * padx) / max(1, n)
+    bwid = pitch * 0.62
+    bars = []
+    for i, (d, v) in enumerate(weeks):
+        x = cx0 + padx + i * pitch + (pitch - bwid) / 2
+        if v == 0:
+            bars.append(f'<rect x="{x:.1f}" y="{base - 3:.1f}" width="{bwid:.1f}" height="3" rx="1.5" fill="#fff" fill-opacity=".1"/>')
+            continue
+        h = max(6, hmax * v / vmax)
+        op = 0.55 + 0.45 * (v / vmax)
+        fill = MINT if i == best_i else MINT_D
+        bars.append(f'<rect x="{x:.1f}" y="{base - h:.1f}" width="{bwid:.1f}" height="{h:.1f}" rx="{min(5, bwid/2):.1f}" '
+                    f'fill="{fill}" fill-opacity="{op:.2f}"/>')
+    el += bars
+    # best week label
+    if vals and max(vals) > 0:
+        bx = cx0 + padx + best_i * pitch + pitch / 2
+        by = base - hmax - 12
+        label = f"Best week {fmt(max(vals))}"
+        lw = doc.text("ui_b", label, 17, 0, 0)[1]
+        lx = min(max(bx - lw / 2, cx0 + padx), cx0 + cw - padx - lw)
+        t, _ = doc.text("ui_b", label, 17, lx, by, fill=MINT)
+        el.append(t)
+    # month labels at the first week of each month
+    last = -99
+    for i, (d, v) in enumerate(weeks):
+        first_day = d
+        if i == 0 or first_day.day <= 7:
+            x = cx0 + padx + i * pitch + pitch / 2
+            if x - last < (52 if phone else 60) or x > cx0 + cw - padx - 20:
                 continue
-            lvl = d[2]
-            x, y = gx + wi * pitch, grid_y + di * pitch
-            cv.rect(x, y, cell, cell, LEVELS[lvl])
-            if lvl >= 2:
-                cv.px(x, y, "#FFF6D6")
-            if lvl == 0:
-                cv.px(x + cell - 1, y + cell - 1, "#170F38")
-    # month labels at the first full week of each month
-    last_x = -99
-    for wi, wk in enumerate(weeks):
-        first = next((d for d in wk if d), None)
-        if first and first[0].day <= 7:
-            x = gx + wi * pitch
-            if x - last_x >= 18 and x + 12 < W - 6:
-                text(cv, "tiny", MONTHS[first[0].month - 1], x, grid_y + 7 * pitch + 2, DIM)
-                last_x = x
+            m = (first_day + dt.timedelta(days=6)).month if i == 0 and first_day.day > 7 else first_day.month
+            t, _ = doc.text("ui", MONTHS[m - 1], 16, x, base + 28, fill=MUTED, anchor="middle")
+            el.append(t)
+            last = x
+    # playhead sweeping across the weeks
+    T = 14
+    span = cw - 2 * padx
+    el.append(f'<g class="ph"><rect x="{cx0 + padx - 1}" y="{cy0 + 18}" width="2" height="{base - cy0 - 18}" fill="{MINT}" '
+              f'fill-opacity=".85"/><rect x="{cx0 + padx - 9}" y="{cy0 + 18}" width="18" height="{base - cy0 - 18}" '
+              f'fill="url(#phg)"/><circle cx="{cx0 + padx}" cy="{cy0 + 18}" r="4.5" fill="{MINT}"/></g>')
+    css = (f".ph{{animation:ph {T}s linear infinite}}"
+           f"@keyframes ph{{0%{{transform:translateX(0px);opacity:0}}4%{{opacity:1}}92%{{opacity:1}}"
+           f"100%{{transform:translateX({span:.1f}px);opacity:0}}}}"
+           "@media (prefers-reduced-motion:reduce){.ph{animation:none;opacity:0}}")
     # footer
-    fy = grid_y + 7 * pitch + 12
-    stamp = f"UPDATED {today.day} {MONTHS[today.month - 1]} {today.year}"
-    text(cv, "tiny", stamp, 14, fy, DIM)
-    if phone:
-        return finish(cv, st, W, H, gx, gw, grid_y, pitch, weeks)
-    lx = W - 14 - (5 * pitch - 1) - text_width("tiny", "MORE") - text_width("tiny", "LESS") - 8
-    text(cv, "tiny", "LESS", lx, fy, DIM)
-    lx += text_width("tiny", "LESS") + 4
-    for i, c in enumerate(LEVELS):
-        cv.rect(lx + i * pitch, fy, cell, cell, c)
-    text(cv, "tiny", "MORE", lx + 5 * pitch + 3, fy, DIM)
-    return finish(cv, st, W, H, gx, gw, grid_y, pitch, weeks)
-
-
-def finish(cv, st, W, H, gx, gw, grid_y, pitch, weeks):
-
-    # ---------------------------------------------------------------- svg
-    WW, HH = W * K, H * K
-    base = base64.b64encode(cv.png(K)).decode()
-    cat = base64.b64encode(open(os.path.join(HERE, "cat-run.png"), "rb").read()).decode()
-    T = 14.0
-    run_w = gw * K
-    cat_y = grid_y * K - 46 + 2
-    css = (
-        "image{image-rendering:pixelated}"
-        f".scan{{animation:scan {T}s steps({len(weeks)},end) infinite}}"
-        f".walk{{animation:walk {T}s linear infinite}}"
-        ".run{animation:run .44s steps(4,end) infinite}"
-        f"@keyframes scan{{from{{transform:translateX(0px)}}to{{transform:translateX({run_w + 4}px)}}}}"
-        f"@keyframes walk{{from{{transform:translateX({-30}px)}}to{{transform:translateX({run_w - 20}px)}}}}"
-        "@keyframes run{from{transform:translateX(0px)}to{transform:translateX(-232px)}}"
-        "@media (prefers-reduced-motion:reduce){*{animation:none!important}}"
-    )
-    svg = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WW} {HH}" width="{WW}" height="{HH}">'
-        f"<title>High scores: {fmt(st['total'])} contributions in the last year</title>"
-        f"<style>{css}</style>"
-        f'<defs><clipPath id="cc"><rect width="58" height="46"/></clipPath>'
-        f'<clipPath id="gc"><rect x="{gx*K}" y="{grid_y*K - 60}" width="{run_w}" height="{7*pitch*K + 60}"/></clipPath></defs>'
-        f'<image width="{WW}" height="{HH}" href="data:image/png;base64,{base}"/>'
-        f'<g clip-path="url(#gc)">'
-        f'<rect class="scan" x="{gx*K - 2}" y="{grid_y*K - 2}" width="{pitch*K}" height="{7*pitch*K}" fill="#FFFFFF" opacity=".16"/>'
-        f'<g transform="translate({gx*K} {cat_y})"><g class="walk"><g clip-path="url(#cc)"><g class="run">'
-        f'<image width="232" height="46" href="data:image/png;base64,{cat}"/></g></g></g></g>'
-        f"</g></svg>"
-    )
+    fy = cy0 + ch + 34
+    up = f"Updated {st['today'].day} {MONTHS[st['today'].month - 1]} {st['today'].year}"
+    t, _ = doc.text("ui", up, 17, 46 if not phone else 36, fy, fill=MUTED, tracking=-0.01)
+    el.append(t)
+    if not phone:
+        t, _ = doc.text("ui", "Weekly contributions, last 12 months", 17, W - 48, fy, fill=MUTED, anchor="end", tracking=-0.01)
+        el.append(t)
+    else:
+        t, _ = doc.text("ui", "Weekly, last 6 months", 17, W - 36, fy, fill=MUTED, anchor="end", tracking=-0.01)
+        el.append(t)
+    H = int(fy + 30)
+    title = f"Activity: {fmt(st['total'])} contributions in the last year"
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img">'
+           f"<title>{title}</title><style>{css}</style><defs>"
+           f'<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1A1B21"/>'
+           f'<stop offset="1" stop-color="#141418"/></linearGradient>'
+           f'<linearGradient id="edge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/>'
+           f'<stop offset=".5" stop-color="#fff" stop-opacity=".07"/><stop offset="1" stop-color="#fff" stop-opacity=".05"/></linearGradient>'
+           f'<linearGradient id="phg" x1="0" x2="1"><stop offset="0" stop-color="{MINT}" stop-opacity="0"/>'
+           f'<stop offset=".5" stop-color="{MINT}" stop-opacity=".18"/><stop offset="1" stop-color="{MINT}" stop-opacity="0"/></linearGradient>'
+           f"{doc.defs()}</defs>"
+           f'<rect width="{W}" height="{H}" rx="30" fill="url(#bg)"/>'
+           f'{"".join(el)}'
+           f'<rect x=".75" y=".75" width="{W - 1.5}" height="{H - 1.5}" rx="29.25" fill="none" stroke="url(#edge)" stroke-width="1.5"/>'
+           f"</svg>")
     return svg
 
 
@@ -352,12 +260,11 @@ def main():
     else:
         data = fetch()
     st = summarise(data)
-    today = dt.date.fromisoformat(st["days"][-1]["date"]) if st["days"] else dt.date.today()
     out_dir = os.path.join(ROOT, "assets")
     os.makedirs(out_dir, exist_ok=True)
     for phone, name in ((False, "stats.svg"), (True, "stats-m.svg")):
-        open(os.path.join(out_dir, name), "w").write(draw(st, phone, today))
-    print(json.dumps({k: v for k, v in st.items() if k != "days"}))
+        open(os.path.join(out_dir, name), "w", encoding="utf-8").write(draw(st, phone))
+    print(json.dumps({k: v for k, v in st.items() if k not in ("weeks", "today")}))
 
 
 if __name__ == "__main__":
