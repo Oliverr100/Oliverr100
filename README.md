@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="assets/hero-m.svg">
-    <img src="assets/hero.svg" alt="Oliver Tong, game programmer. 2D gameplay loops, core mechanics and interactive systems. Now expanding into 3D." width="100%">
+    <img src="assets/hero.svg" alt="Oliver Tong, game programmer. 2D gameplay loops, core mechanics and interactive systems. Now expanding into 3D. Beside the name, a mint square from Shape Survivor auto-aims at red squares that keep duplicating." width="100%">
   </picture>
 </p>
 
@@ -23,7 +23,7 @@
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="assets/player-card-m.svg">
-    <img src="assets/player-card.svg" alt="Player card for Oliver Tong. Role: game programmer. University: Bina Nusantara University. Program: Game Application and Technology. Specialty: 2D gameplay loops and core mechanics. Learning: 3D game design." width="100%">
+    <img src="assets/player-card.svg" alt="Player card for Oliver Tong, styled like a game-engine inspector. Role: game programmer. University: Bina Nusantara University. Program: Game Application and Technology. Specialty: 2D gameplay loops and core mechanics. Learning: 3D game design." width="100%">
   </picture>
 </p>
 
@@ -83,6 +83,22 @@ A 3D physics-based multiplayer escape game built natively in Roblox Studio with 
   <picture>
     <source media="(max-width: 600px)" srcset="assets/loadout-m.svg">
     <img src="assets/loadout.svg" alt="Engines: Unity and Roblox Studio. Languages: C#, C++ and Luau. Tools: Git, GitHub and itch.io." width="100%">
+  </picture>
+</p>
+
+<br>
+
+<h3>
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/title-activity-m.svg">
+    <img src="assets/title-activity.svg" alt="Activity" width="100%">
+  </picture>
+</h3>
+
+<p align="center">
+  <picture>
+    <source media="(max-width: 600px)" srcset="assets/stats-m.svg">
+    <img src="assets/stats.svg" alt="Public GitHub activity from the last year: total contributions, longest streak, best day, public repositories and a weekly contribution chart. Redrawn every day." width="100%">
   </picture>
 </p>
 
