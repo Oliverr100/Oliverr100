@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="assets/hero-m.svg">
-    <img src="assets/hero.svg" alt="Oliver Tong, game programmer. 2D gameplay loops, core mechanics and interactive systems. Now expanding into 3D. Beside the name, a mint square from Shape Survivor auto-aims at red squares that keep duplicating." width="100%">
+    <img src="assets/hero.svg" alt="Oliver Tong, game programmer. 2D gameplay loops, core mechanics and interactive systems. Now expanding into 3D. Beside the name, a mint square from Shape Survivor auto-aims at red squares that keep duplicating, with a survival timer and kill counter. Status: now building Away From Peak." width="100%">
   </picture>
 </p>
 
@@ -23,7 +23,7 @@
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="assets/player-card-m.svg">
-    <img src="assets/player-card.svg" alt="Player card for Oliver Tong, styled like a game-engine inspector. Role: game programmer. University: Bina Nusantara University. Program: Game Application and Technology. Specialty: 2D gameplay loops and core mechanics. Learning: 3D game design." width="100%">
+    <img src="assets/player-card.svg" alt="Player card for Oliver Tong, styled like the Unity Inspector window. Role: game programmer. University: Bina Nusantara University. Program: Game Application and Technology. Specialty: 2D gameplay loops and core mechanics. Learning: 3D game design." width="100%">
   </picture>
 </p>
 
@@ -40,7 +40,7 @@ With hands-on experience in **Unity**, I specialize in designing engaging **2D g
   </picture>
 </h3>
 
-<p><a href="https://oliverrr100.itch.io/shape-survivor"><img src="assets/card-shape-survivor.webp" alt="Shape Survivor, a 2D survival game made with Unity and C#. Looping gameplay footage: a mint square auto-fires at waves of red squares." width="100%"></a></p>
+<p><a href="https://oliverrr100.itch.io/shape-survivor"><picture><source media="(max-width: 600px)" srcset="assets/card-shape-survivor-m.webp"><img src="assets/card-shape-survivor.webp" alt="Shape Survivor, a 2D survival game made with Unity and C#. Looping gameplay footage: a mint square auto-fires at waves of red squares." width="100%"></picture></a></p>
 
 A single-player survival game where you try to last as long as you can against a growing horde of zombies that keep duplicating.
 
@@ -48,7 +48,7 @@ Play it on [itch.io](https://oliverrr100.itch.io/shape-survivor) or read the cod
 
 <br>
 
-<p><a href="https://oliverrr100.itch.io/tps-lone-hero"><img src="assets/card-lone-hero.webp" alt="Lone Hero, a 3D stealth and action shooter made with Unity 2022.3 and C#. Looping gameplay footage." width="100%"></a></p>
+<p><a href="https://oliverrr100.itch.io/tps-lone-hero"><picture><source media="(max-width: 600px)" srcset="assets/card-lone-hero-m.webp"><img src="assets/card-lone-hero.webp" alt="Lone Hero, a 3D stealth and action shooter made with Unity 2022.3 and C#. Looping gameplay footage." width="100%"></picture></a></p>
 
 A fast-paced third-person stealth and action-shooter prototype built in Unity 2022.3. Stranded in an isolated alien arena and vastly outnumbered, you balance tense line-of-sight stealth with high-stakes projectile combat to secure key items and find the exit.
 
@@ -56,7 +56,7 @@ Play it on [itch.io](https://oliverrr100.itch.io/tps-lone-hero) or read the code
 
 <br>
 
-<p><a href="https://oliverrr100.itch.io/cat-runner"><img src="assets/card-cat-runner.webp" alt="Cat Runner, a 2D endless runner made with Unity and C#. Looping gameplay footage of a cat running across platforms." width="100%"></a></p>
+<p><a href="https://oliverrr100.itch.io/cat-runner"><picture><source media="(max-width: 600px)" srcset="assets/card-cat-runner-m.webp"><img src="assets/card-cat-runner.webp" alt="Cat Runner, a 2D endless runner made with Unity and C#. Looping gameplay footage of a cat running across platforms." width="100%"></picture></a></p>
 
 An addictive endless runner starring an adorable, hat-sporting cat. Keep running, stay on the platforms and chase the highest score, but the further you go, the faster the world moves.
 
@@ -64,7 +64,7 @@ Play it on [itch.io](https://oliverrr100.itch.io/cat-runner) or read the code on
 
 <br>
 
-<p><img src="assets/card-away-from-peak.webp" alt="Away From Peak, a 3D multiplayer escape game in development in Roblox Studio with Luau. An illustration, not gameplay: a runner leaps down a crumbling mountain while a lava wall chases." width="100%"></p>
+<p><picture><source media="(max-width: 600px)" srcset="assets/card-away-from-peak-m.webp"><img src="assets/card-away-from-peak.webp" alt="Away From Peak, a 3D multiplayer escape game in development in Roblox Studio with Luau. An illustration, not gameplay: a runner leaps down a crumbling mountain while a lava wall chases." width="100%"></picture></p>
 
 A 3D physics-based multiplayer escape game built natively in Roblox Studio with Luau. Subverting traditional "ragebait" climbers, players must rush *down* a steep, crumbling Mount Krakatau to escape a fast-pursuing lethal lava wall.
 
@@ -98,7 +98,7 @@ A 3D physics-based multiplayer escape game built natively in Roblox Studio with 
 <p align="center">
   <picture>
     <source media="(max-width: 600px)" srcset="assets/stats-m.svg">
-    <img src="assets/stats.svg" alt="Public GitHub activity from the last year: total contributions, longest streak, best day, public repositories and a weekly contribution chart. Redrawn every day." width="100%">
+    <img src="assets/stats.svg" alt="Public GitHub activity from the last year: total contributions, longest streak, best day, public repositories and a calendar of daily contributions. Redrawn every day." width="100%">
   </picture>
 </p>
 
