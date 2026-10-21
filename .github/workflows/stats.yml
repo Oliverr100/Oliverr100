@@ -1,4 +1,4 @@
-name: High scores
+name: Activity panel
 
 # Redraws assets/stats.svg and assets/stats-m.svg from public GitHub activity.
 on:
@@ -14,13 +14,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: activity-panel
+  cancel-in-progress: false
+
 jobs:
   draw:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Draw the high scores panel
+      - name: Draw the activity panel
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 .github/stats/stats.py
@@ -33,6 +37,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No change"
           else
-            git commit -m "Update high scores"
+            git commit -m "Update the activity panel"
+            git pull --rebase
             git push
           fi
